@@ -543,7 +543,7 @@ function renderHistory() {
 		<td style="color:var(--accent)">${p}g</td>
 		<td style="color:var(--accent2)">${c}g</td>
 		<td style="color:var(--warn)">${f}g</td>
-		<td>${cals}</td>
+		<td>${cals}Kcal</td>
 		<td style="color:var(--accent2)">${log.water_ml||0}ml</td>
 		<td style="color:var(--purple)">${log.sleep_hours||0}h</td>
 		<td>${cre}</td>
