@@ -1,0 +1,490 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Projeto 20 Dias — Firebase</title>
+  <link rel="stylesheet" href="css/app.css">
+</head>
+<body>
+
+<!-- ═══════════════════════════════════════════
+     LOADING SCREEN
+═══════════════════════════════════════════ -->
+<div class="loading-screen" id="loading-screen">
+  <div class="mark">20 DIAS</div>
+  <div class="spinner"></div>
+  <div style="font-size:13px;color:var(--text-muted)">Conectando ao Firebase...</div>
+</div>
+
+<!-- ═══════════════════════════════════════════
+     AUTH PAGE
+═══════════════════════════════════════════ -->
+<div id="auth-page" style="display:none">
+  <div class="auth-wrap">
+    <div class="auth-card">
+      <div class="auth-logo">
+        <div class="mark">20 DIAS</div>
+        <div class="sub">Projeto Definição · Firebase</div>
+      </div>
+
+      <div id="auth-error" class="alert-error" style="display:none"></div>
+
+      <div class="auth-tabs">
+        <button class="auth-tab active" onclick="authTab('login')">Entrar</button>
+        <button class="auth-tab"        onclick="authTab('register')">Criar conta</button>
+      </div>
+
+      <!-- LOGIN -->
+      <div id="tab-login">
+        <div class="form-group">
+          <label class="form-label">E-mail</label>
+          <input type="email" id="inp-email" class="form-input" placeholder="seu@email.com" value="lucasgoncalvesslash@gmail.com">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Senha</label>
+          <input type="password" id="inp-pass" class="form-input" placeholder="••••••••">
+        </div>
+        <button class="btn-primary" onclick="doLogin()">Entrar no programa</button>
+        <p style="font-size:12px;color:var(--text-muted);margin-top:.75rem;text-align:center">
+          ⚡ Autenticação via Firebase Realtime DB
+        </p>
+      </div>
+
+      <!-- REGISTER -->
+      <div id="tab-register" style="display:none">
+        <div class="form-group">
+          <label class="form-label">Nome</label>
+          <input type="text" id="reg-name" class="form-input" placeholder="Seu nome">
+        </div>
+        <div class="form-group">
+          <label class="form-label">E-mail</label>
+          <input type="email" id="reg-email" class="form-input" placeholder="seu@email.com">
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Idade</label>
+            <input type="number" id="reg-age" class="form-input" placeholder="29" value="29">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Altura (cm)</label>
+            <input type="number" id="reg-height" class="form-input" placeholder="175" value="175">
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Peso (kg)</label>
+          <input type="number" id="reg-weight" class="form-input" step="0.1" placeholder="78.0" value="78">
+        </div>
+        <button class="btn-primary" onclick="doRegister()">Iniciar programa</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════
+     APP PAGE
+═══════════════════════════════════════════ -->
+<div id="app-page" style="display:none">
+  <div class="app-shell">
+
+    <!-- ── SIDEBAR ── -->
+    <aside class="sidebar">
+      <div class="sidebar-logo">
+        <div class="mark" style="font-family:var(--font-display);font-size:1.6rem;font-weight:800;color:var(--accent);text-transform:uppercase">20 DIAS</div>
+        <div class="day-badge" id="sb-mark">DIA 1 DE 20</div>
+      </div>
+
+      <nav class="sidebar-nav">
+        <button class="nav-item active" id="nav-hoje"       onclick="showSection('hoje')">       <span class="icon">⚡</span> Hoje</button>
+        <button class="nav-item"        id="nav-treino"     onclick="showSection('treino')">     <span class="icon">🏋️</span> Treino</button>
+        <button class="nav-item"        id="nav-nutricao"   onclick="showSection('nutricao')">   <span class="icon">🥗</span> Nutrição</button>
+        <button class="nav-item"        id="nav-hidratacao" onclick="showSection('hidratacao')"> <span class="icon">💧</span> Hidratação & Sono</button>
+        <button class="nav-item"        id="nav-historico"  onclick="showSection('historico')">  <span class="icon">📊</span> Histórico</button>
+
+        <div style="margin-top:1rem;padding:0 4px">
+          <div style="font-size:11px;color:var(--text-muted);letter-spacing:.08em;text-transform:uppercase;margin-bottom:8px;padding:0 8px">Programa — 20 dias</div>
+          <div id="sb-days"></div>
+        </div>
+      </nav>
+
+      <div class="sidebar-footer">
+        <div class="user-card">
+          <div class="user-avatar" id="sb-avatar">L</div>
+          <div class="user-info"><div class="user-name" id="sb-username">Lucas</div></div>
+          <button class="btn-logout" onclick="doLogout()" title="Sair">✕</button>
+        </div>
+      </div>
+    </aside>
+
+    <!-- ── MAIN ── -->
+    <main class="main-content">
+
+      <!-- ════════ SEÇÃO: HOJE ════════ -->
+      <section id="sec-hoje" class="app-section active">
+        <div class="page-header">
+          <div class="day-headline" id="hl-day">DIA <span>1</span></div>
+          <div class="day-meta">
+            <span class="meta-badge badge-treino" id="hl-badge">Treino</span>
+            <span style="font-size:13px;color:var(--text-muted)" id="hl-dur"></span>
+          </div>
+        </div>
+
+        <!-- Timeline -->
+        <div class="week-timeline" id="timeline"></div>
+
+        <!-- Stats -->
+        <div class="stats-bar">
+          <div class="stat-tile" style="--tile-color:var(--accent)">
+            <div class="stat-label">Exercícios</div>
+            <div class="stat-value" id="stat-ex">—</div>
+            <div class="stat-sub">concluídos hoje</div>
+          </div>
+          <div class="stat-tile" style="--tile-color:var(--warn)">
+            <div class="stat-label">Calorias</div>
+            <div class="stat-value" id="stat-cals">0</div>
+            <div class="stat-sub">meta: 2.200 kcal</div>
+          </div>
+          <div class="stat-tile" style="--tile-color:var(--accent2)">
+            <div class="stat-label">Água</div>
+            <div class="stat-value" id="stat-water">0</div>
+            <div class="stat-sub">ml · meta: 3.000</div>
+          </div>
+          <div class="stat-tile" style="--tile-color:var(--purple)">
+            <div class="stat-label">Sono</div>
+            <div class="stat-value" id="stat-sleep">0</div>
+            <div class="stat-sub">h · meta: 7,5h</div>
+          </div>
+        </div>
+
+        <!-- Grid -->
+        <div class="dashboard-grid">
+          <div class="card">
+            <div class="card-header">
+              <span class="card-title">⚡ Resumo do dia</span>
+            </div>
+            <div class="card-body">
+              <!-- Exercícios -->
+              <div style="margin-bottom:1.25rem">
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+                  <span style="font-size:13px;font-weight:500;color:var(--text-secondary)">🏋️ Exercícios</span>
+                  <span style="font-size:12px;color:var(--text-muted)" id="ov-ex-label">0 / 0</span>
+                </div>
+                <div class="progress-track"><div class="progress-fill" id="ov-ex-bar" style="width:0%"></div></div>
+              </div>
+              <!-- Proteína -->
+              <div style="margin-bottom:1.25rem">
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+                  <span style="font-size:13px;font-weight:500;color:var(--text-secondary)">🥗 Proteína</span>
+                  <span style="font-size:12px;color:var(--text-muted)" id="ov-prot-label">0g / 160g</span>
+                </div>
+                <div class="progress-track"><div class="progress-fill" id="ov-prot-bar" style="width:0%"></div></div>
+              </div>
+              <!-- Água -->
+              <div style="margin-bottom:1.25rem">
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+                  <span style="font-size:13px;font-weight:500;color:var(--text-secondary)">💧 Hidratação</span>
+                  <span style="font-size:12px;color:var(--text-muted)" id="ov-water-label">0ml / 3000ml</span>
+                </div>
+                <div class="progress-track"><div class="progress-fill water" id="ov-water-bar" style="width:0%"></div></div>
+              </div>
+              <!-- Sono -->
+              <div>
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+                  <span style="font-size:13px;font-weight:500;color:var(--text-secondary)">🌙 Sono</span>
+                  <span style="font-size:12px;color:var(--text-muted)" id="ov-sleep-label">0h / 7,5h</span>
+                </div>
+                <div class="progress-track"><div class="progress-fill sleep" id="ov-sleep-bar" style="width:0%"></div></div>
+              </div>
+            </div>
+          </div>
+
+          <div style="display:flex;flex-direction:column;gap:12px">
+            <div class="card">
+              <div class="card-header"><span class="card-title">🚀 Ações rápidas</span></div>
+              <div class="card-body" style="display:flex;flex-direction:column;gap:8px">
+                <button class="btn-save" onclick="showSection('treino')">🏋️ Ver treino de hoje</button>
+                <button class="btn-save" onclick="showSection('nutricao')"   style="border-color:var(--warn);color:var(--warn)">🥗 Registrar nutrição</button>
+                <button class="btn-save" onclick="showSection('hidratacao')" style="border-color:var(--accent2);color:var(--accent2)">💧 Registrar água & sono</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ════════ SEÇÃO: TREINO ════════ -->
+      <section id="sec-treino" class="app-section">
+        <div class="page-header">
+          <div class="day-headline" id="tr-headline">🏋️ TREINO</div>
+          <div class="day-meta">
+            <span class="meta-badge badge-treino" id="tr-badge">Treino</span>
+            <span style="font-size:13px;color:var(--text-muted)" id="tr-dur"></span>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-header">
+            <span class="card-title">Exercícios do dia</span>
+            <div style="display:flex;align-items:center;gap:8px">
+              <span style="font-size:12px;color:var(--text-muted)" id="ex-label">0 / 0</span>
+              <div style="width:100px"><div class="progress-track"><div class="progress-fill" id="ex-bar" style="width:0%"></div></div></div>
+            </div>
+          </div>
+          <div class="card-body">
+            <div style="margin-bottom:1rem;padding:10px 14px;background:var(--bg-elevated);border-radius:var(--radius-sm);font-size:13px;color:var(--text-secondary)">
+              💡 Clique em cada exercício ao concluir. Salvo automaticamente no Firebase.
+            </div>
+            <div class="exercise-list" id="exercise-list"></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ════════ SEÇÃO: NUTRIÇÃO ════════ -->
+      <section id="sec-nutricao" class="app-section">
+        <div class="page-header">
+          <div class="day-headline">🥗 NUTRIÇÃO</div>
+          <div class="day-meta"><span style="font-size:13px;color:var(--text-muted)">Registro de macronutrientes</span></div>
+        </div>
+
+        <div class="dashboard-grid">
+          <!-- Macros -->
+          <div style="display:flex;flex-direction:column;gap:1.25rem">
+            <div class="card">
+              <div class="card-header"><span class="card-title">Macronutrientes</span><span style="font-size:12px;color:var(--text-muted)">Meta: 2.200 kcal/dia</span></div>
+              <div class="card-body">
+
+                <!-- PROTEÍNA -->
+                <div class="macro-big">
+                  <div class="macro-big-header">
+                    <div><div class="macro-big-title" style="color:var(--accent)">Proteína</div><div class="macro-big-sub">4 kcal/g · meta 160g</div></div>
+                    <div class="macro-big-controls">
+                      <button class="tracker-btn" onclick="adjustMacro('protein',-5)">−</button>
+                      <span class="macro-big-val" style="color:var(--accent)" id="disp-protein">0</span>
+                      <span style="font-size:13px;color:var(--text-muted)">g</span>
+                      <button class="tracker-btn" onclick="adjustMacro('protein',5)">+</button>
+                    </div>
+                  </div>
+                  <div class="progress-track"><div class="progress-fill" id="bar-protein" style="width:0%"></div></div>
+                  <div class="pct-label"><span>0g</span><span id="pct-protein">0%</span><span>160g</span></div>
+                </div>
+
+                <!-- CARBOIDRATOS -->
+                <div class="macro-big">
+                  <div class="macro-big-header">
+                    <div><div class="macro-big-title" style="color:var(--accent2)">Carboidratos</div><div class="macro-big-sub">4 kcal/g · meta 210g</div></div>
+                    <div class="macro-big-controls">
+                      <button class="tracker-btn" onclick="adjustMacro('carbs',-5)">−</button>
+                      <span class="macro-big-val" style="color:var(--accent2)" id="disp-carbs">0</span>
+                      <span style="font-size:13px;color:var(--text-muted)">g</span>
+                      <button class="tracker-btn" onclick="adjustMacro('carbs',5)">+</button>
+                    </div>
+                  </div>
+                  <div class="progress-track"><div class="progress-fill water" id="bar-carbs" style="width:0%"></div></div>
+                  <div class="pct-label"><span>0g</span><span id="pct-carbs">0%</span><span>210g</span></div>
+                </div>
+
+                <!-- GORDURA -->
+                <div class="macro-big">
+                  <div class="macro-big-header">
+                    <div><div class="macro-big-title" style="color:var(--warn)">Gorduras</div><div class="macro-big-sub">9 kcal/g · meta 60g</div></div>
+                    <div class="macro-big-controls">
+                      <button class="tracker-btn" onclick="adjustMacro('fat',-2)">−</button>
+                      <span class="macro-big-val" style="color:var(--warn)" id="disp-fat">0</span>
+                      <span style="font-size:13px;color:var(--text-muted)">g</span>
+                      <button class="tracker-btn" onclick="adjustMacro('fat',2)">+</button>
+                    </div>
+                  </div>
+                  <div class="progress-track"><div class="progress-fill macros" id="bar-fat" style="width:0%"></div></div>
+                  <div class="pct-label"><span>0g</span><span id="pct-fat">0%</span><span>60g</span></div>
+                </div>
+
+              </div>
+            </div>
+          </div>
+
+          <!-- Painel direito -->
+          <div style="display:flex;flex-direction:column;gap:1.25rem">
+
+            <!-- Total calorias -->
+            <div class="card">
+              <div class="card-header"><span class="card-title">🔥 Total do dia</span></div>
+              <div class="card-body">
+                <div style="text-align:center;padding:1rem 0 1.5rem">
+                  <div style="font-size:12px;color:var(--text-muted);margin-bottom:4px;letter-spacing:.08em;text-transform:uppercase">Calorias estimadas</div>
+                  <div style="font-family:var(--font-display);font-size:3.5rem;font-weight:800;line-height:1" id="total-cals">0</div>
+                  <div style="font-size:13px;color:var(--text-muted);margin-top:4px">/ 2.200 kcal</div>
+                  <div class="progress-track" style="margin-top:12px"><div class="progress-fill macros" id="bar-cals" style="width:0%"></div></div>
+                </div>
+                <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;text-align:center">
+                  <div style="background:var(--bg-elevated);border-radius:var(--radius-sm);padding:8px">
+                    <div style="font-family:var(--font-display);font-size:1.1rem;font-weight:700;color:var(--accent)" id="sum-prot">0g</div>
+                    <div style="font-size:10px;color:var(--text-muted)">Proteína</div>
+                  </div>
+                  <div style="background:var(--bg-elevated);border-radius:var(--radius-sm);padding:8px">
+                    <div style="font-family:var(--font-display);font-size:1.1rem;font-weight:700;color:var(--accent2)" id="sum-carbs">0g</div>
+                    <div style="font-size:10px;color:var(--text-muted)">Carbs</div>
+                  </div>
+                  <div style="background:var(--bg-elevated);border-radius:var(--radius-sm);padding:8px">
+                    <div style="font-family:var(--font-display);font-size:1.1rem;font-weight:700;color:var(--warn)" id="sum-fat">0g</div>
+                    <div style="font-size:10px;color:var(--text-muted)">Gordura</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Creatina -->
+            <div class="card">
+              <div class="card-header"><span class="card-title">💊 Suplementação</span></div>
+              <div class="card-body">
+                <div class="creatine-toggle" id="creatine-toggle" onclick="toggleCreatine()">
+                  <div class="toggle-sw"></div>
+                  <div>
+                    <div style="font-size:14px;font-weight:500">Creatina monohidratada 5g</div>
+                    <div style="font-size:12px;color:var(--text-muted)">Tomei a dose de hoje</div>
+                  </div>
+                </div>
+                <div style="font-size:12px;color:var(--text-muted);padding:4px;line-height:1.5">
+                  Tome junto com a refeição pós-treino ou no café da manhã. Beba pelo menos 3L de água.
+                </div>
+              </div>
+            </div>
+
+            <button class="btn-save" id="btn-save-macros" onclick="saveMacros()">💾 Salvar nutrição do dia</button>
+
+            <!-- Guia de refeições -->
+            <div class="card">
+              <div class="card-header"><span class="card-title">🍽️ Refeições do dia</span></div>
+              <div class="card-body">
+                <div class="meal-item"><div class="meal-hour" style="color:var(--accent)">07h</div><div><div class="meal-name">Café da manhã</div><div class="meal-desc">4 ovos + 2 fatias pão integral + banana + café s/ açúcar</div></div></div>
+                <div class="meal-item"><div class="meal-hour" style="color:var(--accent2)">10h</div><div><div class="meal-name">Lanche manhã</div><div class="meal-desc">200g iogurte grego + 20g castanhas + 1 fruta</div></div></div>
+                <div class="meal-item"><div class="meal-hour" style="color:var(--warn)">13h</div><div><div class="meal-name">Almoço</div><div class="meal-desc">150g frango/peixe grelhado + arroz integral + salada verde</div></div></div>
+                <div class="meal-item"><div class="meal-hour" style="color:var(--purple)">15h</div><div><div class="meal-name">Pré-treino</div><div class="meal-desc">1 banana + 1 col. pasta de amendoim (30–60 min antes)</div></div></div>
+                <div class="meal-item"><div class="meal-hour" style="color:var(--accent)">18h</div><div><div class="meal-name">Pós-treino</div><div class="meal-desc">150g frango/atum + batata-doce + legumes + 5g creatina</div></div></div>
+                <div class="meal-item" style="margin-bottom:0"><div class="meal-hour" style="color:var(--accent2)">20h</div><div><div class="meal-name">Jantar</div><div class="meal-desc">2–3 ovos + omelete + salada (sem carbo à noite)</div></div></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ════════ SEÇÃO: HIDRATAÇÃO & SONO ════════ -->
+      <section id="sec-hidratacao" class="app-section">
+        <div class="page-header">
+          <div class="day-headline">💧 HIDRATAÇÃO & 🌙 SONO</div>
+          <div class="day-meta"><span style="font-size:13px;color:var(--text-muted)">Registro diário</span></div>
+        </div>
+
+        <div class="dashboard-grid">
+          <div style="display:flex;flex-direction:column;gap:1.25rem">
+
+            <!-- ÁGUA -->
+            <div class="card">
+              <div class="card-header"><span class="card-title">💧 Água consumida</span><span style="font-size:12px;color:var(--text-muted)">Meta: 3.000ml</span></div>
+              <div class="card-body">
+                <div style="text-align:center;padding:1.5rem 0">
+                  <div style="font-size:12px;color:var(--text-muted);margin-bottom:8px;letter-spacing:.08em;text-transform:uppercase">Total do dia</div>
+                  <div class="big-val" style="color:var(--accent2)" id="water-big">0</div>
+                  <div style="font-size:14px;color:var(--text-muted);margin-top:4px">ml</div>
+                  <div style="display:flex;justify-content:center;align-items:center;gap:16px;margin-top:1.5rem">
+                    <button class="tracker-btn" style="width:44px;height:44px;font-size:24px" onclick="adjustWater(-250)">−</button>
+                    <div style="font-size:13px;color:var(--text-muted)">250ml por clique</div>
+                    <button class="tracker-btn" style="width:44px;height:44px;font-size:24px" onclick="adjustWater(250)">+</button>
+                  </div>
+                </div>
+
+                <div class="progress-bar-top" style="margin-bottom:6px">
+                  <span class="progress-bar-label">Progresso</span>
+                  <span class="progress-bar-pct" id="water-pct" style="color:var(--accent2)">0%</span>
+                </div>
+                <div class="progress-track" style="height:10px"><div class="progress-fill water" id="water-fill" style="width:0%"></div></div>
+
+                <div class="water-cups" id="water-cups"></div>
+
+                <div class="shortcut-btns">
+                  <button class="shortcut-btn" onclick="addWater(250)">+250ml</button>
+                  <button class="shortcut-btn" onclick="addWater(500)">+500ml</button>
+                  <button class="shortcut-btn" onclick="addWater(750)">+750ml</button>
+                  <button class="shortcut-btn" onclick="addWater(1000)">+1L</button>
+                </div>
+              </div>
+            </div>
+
+            <!-- SONO -->
+            <div class="card">
+              <div class="card-header"><span class="card-title">🌙 Sono da última noite</span><span style="font-size:12px;color:var(--text-muted)">Meta: 7,5h</span></div>
+              <div class="card-body">
+                <div style="text-align:center;padding:1.5rem 0">
+                  <div style="font-size:12px;color:var(--text-muted);margin-bottom:8px;letter-spacing:.08em;text-transform:uppercase">Horas dormidas</div>
+                  <div class="big-val" style="color:var(--purple)" id="sleep-big">0</div>
+                  <div style="font-size:14px;color:var(--text-muted);margin-top:4px">horas</div>
+                  <div style="display:flex;justify-content:center;align-items:center;gap:16px;margin-top:1.5rem">
+                    <button class="tracker-btn" style="width:44px;height:44px;font-size:24px" onclick="adjustSleep(-0.5)">−</button>
+                    <div style="font-size:13px;color:var(--text-muted)">0,5h por clique</div>
+                    <button class="tracker-btn" style="width:44px;height:44px;font-size:24px" onclick="adjustSleep(0.5)">+</button>
+                  </div>
+                </div>
+
+                <div class="progress-bar-top" style="margin-bottom:6px">
+                  <span class="progress-bar-label">Progresso</span>
+                  <span class="progress-bar-pct" id="sleep-pct" style="color:var(--purple)">0%</span>
+                </div>
+                <div class="progress-track" style="height:10px"><div class="progress-fill sleep" id="sleep-fill" style="width:0%"></div></div>
+
+                <div style="margin-top:1rem">
+                  <div style="font-size:12px;color:var(--text-muted);margin-bottom:8px">Avaliação da qualidade</div>
+                  <div class="sleep-rating">
+                    <button class="sleep-btn" onclick="setSleepRating(0)">😴 Ruim</button>
+                    <button class="sleep-btn" onclick="setSleepRating(1)">😐 Regular</button>
+                    <button class="sleep-btn" onclick="setSleepRating(2)">😌 Ótimo</button>
+                  </div>
+                </div>
+
+                <button class="btn-save" id="btn-save-ws" onclick="saveWaterSleep()" style="margin-top:1.25rem;border-color:var(--accent2);color:var(--accent2)">
+                  💾 Salvar hidratação & sono
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Dicas -->
+          <div style="display:flex;flex-direction:column;gap:1.25rem">
+            <div class="card">
+              <div class="card-header"><span class="card-title">💡 Por que isso importa</span></div>
+              <div class="card-body">
+                <div class="tip-card"><div class="tip-card-title">💧 Hidratação e creatina</div><div class="tip-card-body">Com creatina ativa, seu corpo precisa de mais água para mover o nutriente para dentro das células. Mínimo 3L/dia.</div></div>
+                <div class="tip-card"><div class="tip-card-title">🔥 Água e metabolismo</div><div class="tip-card-body">Beber 500ml em jejum aumenta o metabolismo em até 30% por uma hora — ótimo para quem treina cedo.</div></div>
+                <div class="tip-card"><div class="tip-card-title">🌙 Sono e hormônios</div><div class="tip-card-body">70% do GH (hormônio do crescimento) é liberado durante o sono. Dormir pouco cancela parte do trabalho do treino.</div></div>
+                <div class="tip-card"><div class="tip-card-title">⏰ Horário regular</div><div class="tip-card-body">Dormir e acordar no mesmo horário melhora a qualidade do sono mesmo sem aumentar as horas totais.</div></div>
+                <div class="tip-card" style="margin-bottom:0"><div class="tip-card-title">📉 Dias 18–20: corte sódio</div><div class="tip-card-body">Reduza sal e processados nos últimos 3 dias para drenar retenção hídrica subcutânea — resultado visual máximo.</div></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ════════ SEÇÃO: HISTÓRICO ════════ -->
+      <section id="sec-historico" class="app-section">
+        <div class="page-header">
+          <div class="day-headline">📊 HISTÓRICO</div>
+          <div class="day-meta"><span style="font-size:13px;color:var(--text-muted)">Todos os registros do programa · Firebase</span></div>
+        </div>
+        <div class="card">
+          <div class="card-header">
+            <span class="card-title">Registros diários</span>
+            <button onclick="refreshHistory()" style="background:transparent;border:1px solid var(--border);color:var(--text-secondary);padding:5px 14px;border-radius:var(--radius-sm);cursor:pointer;font-size:12px;font-family:var(--font-body)">↺ Atualizar</button>
+          </div>
+          <div class="card-body" id="history-body">
+            <p style="color:var(--text-muted);text-align:center;padding:2rem">Carregando...</p>
+          </div>
+        </div>
+      </section>
+
+    </main>
+  </div>
+</div>
+
+<!-- Toast container -->
+<div class="toast-container" id="toast-container"></div>
+
+<script type="module" src="js/app.js"></script>
+</body>
+</html>
